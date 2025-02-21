@@ -14,4 +14,6 @@ WORKDIR /app
 
 COPY --from=build-env /source/out .
 
+EXPOSE 9912
+
 ENTRYPOINT [ "dotnet", "PenguinCS.Login.dll" ]

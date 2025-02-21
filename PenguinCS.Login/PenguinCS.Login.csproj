@@ -29,4 +29,8 @@
     <ProjectReference Include="..\PenguinCS.Data\PenguinCS.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\appsettings.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
 </Project>
