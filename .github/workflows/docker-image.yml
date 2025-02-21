@@ -9,8 +9,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # - name: Checkout
+      #   uses: actions/checkout@v4
+
+      # - name: Build PenguinCS.Login
+      #   run: docker build . --file PenguinCS.Login/Dockerfile --tag penguincs/login:$(date +%s)
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build PenguinCS.Login
-        run: docker build . --file PenguinCS.Login/Dockerfile --tag penguincs/login:$(date +%s)
+        uses: docker/build-push-action@v6
+        with:
+          push: false
+          tags: penguincs/login:latest
+          file: PenguinCS.Login/Dockerfile
