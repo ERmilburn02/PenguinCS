@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PenguinCS.Login", "PenguinCS.Login\PenguinCS.Login.csproj", "{1D5C0069-507A-4022-BB03-B73EA9A44CA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PenguinCS.Data", "PenguinCS.Data\PenguinCS.Data.csproj", "{18CF0E88-C25B-4EB7-8D82-A4997D70E6DB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PenguinCS.Common", "PenguinCS.Common\PenguinCS.Common.csproj", "{96528D0F-5286-4EB7-9864-04D48C6D3C76}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D5C0069-507A-4022-BB03-B73EA9A44CA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D5C0069-507A-4022-BB03-B73EA9A44CA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D5C0069-507A-4022-BB03-B73EA9A44CA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D5C0069-507A-4022-BB03-B73EA9A44CA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18CF0E88-C25B-4EB7-8D82-A4997D70E6DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18CF0E88-C25B-4EB7-8D82-A4997D70E6DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18CF0E88-C25B-4EB7-8D82-A4997D70E6DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18CF0E88-C25B-4EB7-8D82-A4997D70E6DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96528D0F-5286-4EB7-9864-04D48C6D3C76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96528D0F-5286-4EB7-9864-04D48C6D3C76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96528D0F-5286-4EB7-9864-04D48C6D3C76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96528D0F-5286-4EB7-9864-04D48C6D3C76}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
