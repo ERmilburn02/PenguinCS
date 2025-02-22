@@ -6,4 +6,8 @@ public class PenguinCSOptions
 
     public ushort LegacyVersion { get; set; }
     public ushort VanillaVersion { get; set; }
+
+    public ushort PreActivationDays { get; set; }
+
+    public ushort AuthTTLSeconds { get; set; }
 }
