@@ -16,6 +16,10 @@ RUN dotnet publish ./PenguinCS.Login/PenguinCS.Login.csproj -c Release -o /out
 # Runtime Stage
 FROM mcr.microsoft.com/dotnet/runtime:9.0
 
+LABEL org.opencontainers.image.source=https://github.com/ERmilburn02/PenguinCS-V2
+LABEL org.opencontainers.image.description="PenguinCS Login Server"
+LABEL org.opencontainers.image.licenses=MIT
+
 WORKDIR /app
 
 # Use a non-root user for security

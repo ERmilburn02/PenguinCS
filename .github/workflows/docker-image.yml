@@ -2,28 +2,49 @@ name: Docker Image CI
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
 jobs:
-  build:
+  build-penguincs-login:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     steps:
-      # - name: Checkout
-      #   uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # - name: Build PenguinCS.Login
-      #   run: docker build . --file PenguinCS.Login/Dockerfile --tag penguincs/login:$(date +%s)
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/ermilburn02/penguincs-login
+          tags: |
+            type=ref,event=branch
+            type=sha
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build PenguinCS.Login
+      - name: Build and Push PenguinCS Login
+        id: push
         uses: docker/build-push-action@v6
         with:
-          push: false
-          tags: penguincs/login:latest
+          context: .
+          push: true
+          tags: ${{steps.meta.outputs.tags}}
+          labels: ${{steps.meta.outputs.labels}}
           file: PenguinCS.Login/Dockerfile
+
+      # Only do this for release builds
+      # - name: Generate artifact attestation
+      #   uses: actions/attest-build-provenance@v2
+      #   with:
+      #     subject-name: ghcr.io/ermilburn02/penguincs-login
+      #     subject-digest: ${{ steps.push.outputs.digest }}
+      #     push-to-registry: true
