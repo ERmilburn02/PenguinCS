@@ -10,4 +10,6 @@ public class PenguinCSOptions
     public ushort PreActivationDays { get; set; }
 
     public ushort AuthTTLSeconds { get; set; }
+
+    public ushort MaxPlayers { get; set; }
 }

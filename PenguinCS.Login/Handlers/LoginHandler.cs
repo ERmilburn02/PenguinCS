@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -7,6 +8,7 @@ using System.Xml;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PenguinCS.Common;
+using PenguinCS.Common.Extensions;
 using PenguinCS.Common.Interfaces;
 using PenguinCS.Common.Responses;
 using PenguinCS.Data;
@@ -84,10 +86,13 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
         #region Activation
 
         var timeNow = new DateTime(DateTime.UtcNow.Ticks, DateTimeKind.Unspecified);
+        // Needed for login data later
+        var preactivationHours = 0;
 
         if (!player.Active)
         {
             var preactivation_expiry = player.RegistrationDate + TimeSpan.FromDays(_options.PreActivationDays);
+            preactivationHours = (int)(preactivation_expiry - timeNow).TotalHours;
 
             if (timeNow > preactivation_expiry)
             {
@@ -147,25 +152,115 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
 
         _logger.LogInformation("Client {remoteEndPoint} logged in", stream.Socket.RemoteEndPoint);
 
-        // var randomKey = Crypto.GenerateRandomKey();
-        // var loginKey = Crypto.Hash(randomKey);
-        // var confirmationHash = Crypto.Hash(Crypto.GenerateRandomKey(24));
+        var randomKey = Crypto.GenerateRandomKey();
+        var loginKey = Crypto.Hash(randomKey);
+        var confirmationHash = Crypto.Hash(Crypto.GenerateRandomKey(24));
 
-        // var redisTransaction = _connectionMultiplexer.GetDatabase().CreateTransaction();
-        // _ = redisTransaction.StringSetAsync($"{player.Username}.lkey", loginKey, TimeSpan.FromSeconds(_options.AuthTTLSeconds));
-        // _ = redisTransaction.StringSetAsync($"{player.Username}.ckey", confirmationHash, TimeSpan.FromSeconds(_options.AuthTTLSeconds));
-        // // TODO: Buddy and Population checks (add to transaction)
-        // bool transactionSuccess = await redisTransaction.ExecuteAsync();
-        // if (!transactionSuccess)
-        // {
-        //     _logger.LogError("Failed to set login key and confirmation hash for {username}", player.Username);
-        //     return new DisconnectResponse("%xt%e%-1%0%");
-        // }
+        var loginPopulationTransaction = _connectionMultiplexer.GetDatabase().CreateTransaction();
+        _ = loginPopulationTransaction.StringSetAsync($"{player.Username}.lkey", loginKey, TimeSpan.FromSeconds(_options.AuthTTLSeconds));
+        _ = loginPopulationTransaction.StringSetAsync($"{player.Username}.ckey", confirmationHash, TimeSpan.FromSeconds(_options.AuthTTLSeconds));
+        var redisPopulation = loginPopulationTransaction.HashGetAllAsync("houdini.population");
 
-        // TODO: temp
-        return new DisconnectResponse($"%xt%e%-1%910%{TimeSpan.FromHours(6) + TimeSpan.FromSeconds(9)}%");
-        // return new DisconnectResponse("%xt%e%-1%150%");
+        // We can't get buddies until we have the population, so we have to split the transactions up.
 
+        bool transactionSuccess = await loginPopulationTransaction.ExecuteAsync();
+        if (!transactionSuccess)
+        {
+            _logger.LogError("Failed to set login key and confirmation hash for {username}, or failed to get populations", player.Username);
+            return new DisconnectResponse("%xt%e%-1%0%");
+        }
+
+        var population = GetServerPopulation(redisPopulation.Result);
+
+        var buddies = _dbContext.BuddyLists.Where(b => b.PenguinId == player.Id).Select(b => b.BuddyId).ToArray();
+
+        var buddyTransaction = _connectionMultiplexer.GetDatabase().CreateTransaction();
+
+        Dictionary<ushort, List<Task<bool>>> buddiesOnServerQuery = [];
+        foreach (var server in population)
+        {
+            if (server.Value.Item2 <= 0)
+                continue;
+
+            List<Task<bool>> buddyQuery = [];
+
+            foreach (var buddyId in buddies)
+                buddyQuery.Add(buddyTransaction.SetContainsAsync($"houdini.players.{server.Key}", buddyId));
+
+            buddiesOnServerQuery.Add(server.Key, buddyQuery);
+        }
+
+        transactionSuccess = await buddyTransaction.ExecuteAsync();
+        if (!transactionSuccess)
+        {
+            _logger.LogError("Failed to query buddies for {username}", player.Username);
+            // TODO: Should we really be kicking them for this, or just let them in with no buddy indicators?
+            return new DisconnectResponse("%xt%e%-1%0%");
+        }
+
+        List<ushort> buddyOnServer = [];
+        foreach (var server in buddiesOnServerQuery)
+        {
+            foreach (var buddy in server.Value)
+            {
+                if (buddy.Result == true)
+                {
+                    buddyOnServer.Add(server.Key);
+                    break;
+                }
+            }
+        }
+
+        var approval = player.GetApproval();
+        var rejection = player.GetRejection();
+
+        List<string> populationList = [];
+        foreach (var server in population)
+            populationList.Add($"{server.Key},{server.Value.Item1}");
+        var populationData = string.Join('|', populationList);
+
+        var buddyData = string.Join('|', buddyOnServer);
+
+        var raw_login_data = string.Format("%xt%l%-1%{0}|{0}|{1}|{2}|houdini|{3}|{4}%{5}%%{6}%{7}%{8}%", player.Id, player.Username, loginKey, approval, rejection, confirmationHash, populationData, buddyData, player.Email);
+        if (!player.Active)
+        {
+            raw_login_data += $"{preactivationHours}%";
+        }
+
+        return new RegularResponse(raw_login_data);
+
+    }
+
+    private Dictionary<ushort, (ushort, ushort)> GetServerPopulation(HashEntry[] redisPopulation)
+    {
+        Dictionary<ushort, (ushort, ushort)> result = [];
+
+        var redisDictionary = redisPopulation.ToDictionary();
+
+        foreach (var kvp in redisDictionary)
+        {
+            var serverId = ushort.Parse(kvp.Key);
+            var people = ushort.Parse(kvp.Value);
+            ushort population = 0;
+
+            if (people >= _options.MaxPlayers)
+                population = 7;
+            else
+            {
+                population = (ushort)Math.Floor(people / Math.Min(1, Math.Floor(_options.MaxPlayers / 6d)));
+
+                if (population < 0 || population > 7)
+                {
+                    _logger.LogError("Server {serverId} is out of bounds: {population}", serverId, population);
+
+                    throw new InvalidOperationException("Server population is out of bounds");
+                }
+            }
+
+            result.Add(serverId, (population, people));
+        }
+
+        return result;
     }
 
     private static long GetMinutesPlayedToday(int id, ApplicationDbContext dbContext)
