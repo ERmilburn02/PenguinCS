@@ -22,6 +22,7 @@ public static class Program
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile(null, "appsettings.json", false, true)
             .AddJsonFile(null, $"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true, true)
+            .AddEnvironmentVariables()
             .Build();
 
         Log.Logger = new LoggerConfiguration()
