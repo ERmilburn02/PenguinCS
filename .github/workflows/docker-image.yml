@@ -30,6 +30,10 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha
+          labels: |
+            org.opencontainers.image.source=https://github.com/ERmilburn02/PenguinCS-V2
+            org.opencontainers.image.description="PenguinCS Login Server"
+            org.opencontainers.image.licenses=MIT
 
       - name: Build and Push PenguinCS Login
         id: push
