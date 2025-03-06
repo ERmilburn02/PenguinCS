@@ -35,17 +35,22 @@ public static class Program
 
             var builder = Host.CreateDefaultBuilder(args)
                 .UseSerilog()
-                .ConfigureServices((context, services) => {
+                .ConfigureServices((context, services) =>
+                {
                     services.Configure<PenguinCSOptions>(context.Configuration.GetSection("PenguinCS"));
 
                     // Redis
-                    services.AddSingleton<IConnectionMultiplexer>(sp => {
+                    services.AddSingleton<IConnectionMultiplexer>(sp =>
+                    {
                         return ConnectionMultiplexer.Connect(context.Configuration.GetConnectionString("Redis"));
                     });
 
                     // Postgres
                     services.AddDbContext<ApplicationDbContext>(options =>
-                        options.UseNpgsql(context.Configuration.GetConnectionString("Postgres")));
+                    {
+                        options.UseNpgsql(context.Configuration.GetConnectionString("Postgres"));
+                        options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                    });
 
                     // Handlers
                     services.AddTransient<PolicyHandler>();
