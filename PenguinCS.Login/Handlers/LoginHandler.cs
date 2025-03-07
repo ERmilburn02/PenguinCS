@@ -222,8 +222,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
 
         var buddyData = string.Join('|', buddyOnServer);
 
-        // var raw_login_data = string.Format("%xt%l%-1%{0}|{0}|{1}|{2}|houdini|{3}|{4}%{5}%%{6}%{7}%{8}%", player.Id, player.Username, loginKey, approval, rejection, confirmationHash, populationData, buddyData, player.Email);
-        var rawLoginData = string.Join('|', player.Id, player.Id, player.Username, player.Username, _options.RandomKey, approval, rejection);
+        var rawLoginData = string.Join('|', player.Id, player.Id, player.Username, loginKey, _options.RandomKey, approval, rejection);
         var loginPacket = XTMessage.CreateMessage("l", rawLoginData, confirmationHash, string.Empty, populationData, buddyData, player.Email);
         if (!player.Active)
         {
