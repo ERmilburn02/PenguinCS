@@ -52,7 +52,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
             {
                 _logger.LogWarning("Client has exceeded login attempts");
 
-                return new DisconnectResponse("%xt%e%-1%150%"); // TODO: make it easier to make XT packets
+                return new DisconnectResponse(XTMessage.CreateError(150));
             }
         }
 
@@ -65,7 +65,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
         if (player == null)
         {
             _logger.LogWarning("Client {RemoteEndPoint} failed to login: '{nickname}' Not Found", stream.Socket.RemoteEndPoint, nickNode.InnerText);
-            return new DisconnectResponse("%xt%e%-1%100%");
+            return new DisconnectResponse(XTMessage.CreateError(100));
         }
         #endregion
 
@@ -78,7 +78,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
             _logger.LogWarning("Client {RemoteEndPoint} failed to login: Incorrect Password", stream.Socket.RemoteEndPoint);
 
             _ = IncrementFloodCounter(floodKey);
-            return new DisconnectResponse("%xt%e%-1%101%");
+            return new DisconnectResponse(XTMessage.CreateError(101));
         }
 
         #endregion
@@ -97,7 +97,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
             if (timeNow > preactivation_expiry)
             {
                 _logger.LogWarning("Client {RemoteEndPoint} failed to login: Account not activated", stream.Socket.RemoteEndPoint);
-                return new DisconnectResponse("%xt%e%-1%900%");
+                return new DisconnectResponse(XTMessage.CreateError(900));
             }
         }
 
@@ -108,7 +108,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
         if (player.Permaban)
         {
             _logger.LogWarning("Client {RemoteEndPoint} failed to login: Account banned", stream.Socket.RemoteEndPoint);
-            return new DisconnectResponse("%xt%e%-1%603%");
+            return new DisconnectResponse(XTMessage.CreateError(603));
         }
 
         var activeBan = _dbContext.Bans.Where(b => b.PenguinId == player.Id && b.Expires > timeNow).OrderByDescending(b => b.Expires).FirstOrDefault();
@@ -118,9 +118,9 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
             _logger.LogWarning("Client {RemoteEndPoint} failed to login: Account banned for {hoursLeft} hours", stream.Socket.RemoteEndPoint, hoursLeft);
 
             if (hoursLeft < 1)
-                return new DisconnectResponse("%xt%e%-1%602%");
+                return new DisconnectResponse(XTMessage.CreateError(602));
             else
-                return new DisconnectResponse($"%xt%e%-1%601%{hoursLeft}%");
+                return new DisconnectResponse(XTMessage.CreateError(601, hoursLeft.ToString()));
         }
 
         #endregion
@@ -130,7 +130,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
         if (player.Grounded)
         {
             _logger.LogWarning("Client {RemoteEndPoint} failed to login: Grounded", stream.Socket.RemoteEndPoint);
-            return new DisconnectResponse("%xt%e%-1%913%");
+            return new DisconnectResponse(XTMessage.CreateError(913));
         }
 
         if (player.TimerActive)
@@ -138,13 +138,13 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
             if (!(player.TimerStart < TimeOnly.FromDateTime(timeNow) && player.TimerEnd > TimeOnly.FromDateTime(timeNow)))
             {
                 _logger.LogWarning("Client {RemoteEndPoint} failed to login: Timer invalid", stream.Socket.RemoteEndPoint);
-                return new DisconnectResponse($"%xt%e%-1%911%{player.TimerStart.ToString()}%{player.TimerEnd.ToString()}%");
+                return new DisconnectResponse(XTMessage.CreateError(911, player.TimerStart.ToString(), player.TimerEnd.ToString()));
             }
 
             if (TimeSpan.FromMinutes(GetMinutesPlayedToday(player.Id, _dbContext)) > player.TimerTotal)
             {
                 _logger.LogWarning("Client {RemoteEndPoint} failed to login: Too many minutes played", stream.Socket.RemoteEndPoint);
-                return new DisconnectResponse($"%xt%e%-1%910%{player.TimerTotal}%");
+                return new DisconnectResponse(XTMessage.CreateError(910, player.TimerTotal.ToString()));
             }
         }
 
@@ -167,7 +167,8 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
         if (!transactionSuccess)
         {
             _logger.LogError("Failed to set login key and confirmation hash for {username}, or failed to get populations", player.Username);
-            return new DisconnectResponse("%xt%e%-1%0%");
+            // return new DisconnectResponse("%xt%e%-1%0%");
+            return new DisconnectResponse(XTMessage.UnknownError);
         }
 
         var population = GetServerPopulation(redisPopulation.Result);
@@ -195,7 +196,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
         {
             _logger.LogError("Failed to query buddies for {username}", player.Username);
             // TODO: Should we really be kicking them for this, or just let them in with no buddy indicators?
-            return new DisconnectResponse("%xt%e%-1%0%");
+            return new DisconnectResponse(XTMessage.UnknownError);
         }
 
         List<ushort> buddyOnServer = [];
@@ -221,13 +222,15 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
 
         var buddyData = string.Join('|', buddyOnServer);
 
-        var raw_login_data = string.Format("%xt%l%-1%{0}|{0}|{1}|{2}|houdini|{3}|{4}%{5}%%{6}%{7}%{8}%", player.Id, player.Username, loginKey, approval, rejection, confirmationHash, populationData, buddyData, player.Email);
+        // var raw_login_data = string.Format("%xt%l%-1%{0}|{0}|{1}|{2}|houdini|{3}|{4}%{5}%%{6}%{7}%{8}%", player.Id, player.Username, loginKey, approval, rejection, confirmationHash, populationData, buddyData, player.Email);
+        var rawLoginData = string.Join('|', player.Id, player.Id, player.Username, player.Username, _options.RandomKey, approval, rejection);
+        var loginPacket = XTMessage.CreateMessage("l", rawLoginData, confirmationHash, string.Empty, populationData, buddyData, player.Email);
         if (!player.Active)
         {
-            raw_login_data += $"{preactivationHours}%";
+            loginPacket += $"{preactivationHours}%";
         }
 
-        return new RegularResponse(raw_login_data);
+        return new RegularResponse(loginPacket);
 
     }
 
