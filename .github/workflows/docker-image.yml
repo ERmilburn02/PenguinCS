@@ -31,7 +31,7 @@ jobs:
             type=ref,event=branch
             type=sha
           labels: |
-            org.opencontainers.image.source=https://github.com/ERmilburn02/PenguinCS-V2
+            org.opencontainers.image.source=https://github.com/ERmilburn02/PenguinCS
             org.opencontainers.image.description="PenguinCS Login Server"
             org.opencontainers.image.licenses=MIT
 
