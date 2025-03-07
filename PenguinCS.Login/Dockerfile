@@ -22,9 +22,8 @@ LABEL org.opencontainers.image.licenses=MIT
 
 WORKDIR /app
 
-# Use a non-root user for security
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
-USER appuser
+# Use a non-root user for security (built-in to the base image)
+USER app
 
 COPY --from=build-env /out .
 
