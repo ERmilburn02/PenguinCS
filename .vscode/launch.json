@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Launch PenguinCS.Login (console)",
+            "name": "PenguinCS.Login",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
@@ -15,6 +15,28 @@
             "stopAtEntry": false,
             "console": "internalConsole"
         },
+        {
+            "name": "PenguinCS.Game",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/PenguinCS.Game/bin/Debug/net9.0/PenguinCS.Game.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        // {
+        //     "name": ".NET Core Launch PenguinCS.Login (console)",
+        //     "type": "coreclr",
+        //     "request": "launch",
+        //     "preLaunchTask": "build",
+        //     "program": "${workspaceFolder}/PenguinCS.Login/bin/Debug/net9.0/PenguinCS.Login.dll",
+        //     "args": [],
+        //     "cwd": "${workspaceFolder}",
+        //     "stopAtEntry": false,
+        //     "console": "internalConsole"
+        // },
         // {
         //     "name": "C#: PenguinCS.Login Debug",
         //     "type": "dotnet",

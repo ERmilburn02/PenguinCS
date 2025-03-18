@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PenguinCS.Data", "PenguinCS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PenguinCS.Common", "PenguinCS.Common\PenguinCS.Common.csproj", "{96528D0F-5286-4EB7-9864-04D48C6D3C76}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PenguinCS.Game", "PenguinCS.Game\PenguinCS.Game.csproj", "{167638C1-207A-42D5-8D2C-E78DC1B11D05}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{96528D0F-5286-4EB7-9864-04D48C6D3C76}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96528D0F-5286-4EB7-9864-04D48C6D3C76}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96528D0F-5286-4EB7-9864-04D48C6D3C76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{167638C1-207A-42D5-8D2C-E78DC1B11D05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{167638C1-207A-42D5-8D2C-E78DC1B11D05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{167638C1-207A-42D5-8D2C-E78DC1B11D05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{167638C1-207A-42D5-8D2C-E78DC1B11D05}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
