@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -81,6 +82,56 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
 
         #endregion
 
-        return new DisconnectResponse(XTMessage.UnknownError);
+        #region Redis
+
+        var keyTransaction = redis.CreateTransaction();
+        var loginKeyTask = keyTransaction.StringGetAsync($"{player.Username}.lkey");
+        var confirmHashTask = keyTransaction.StringGetAsync($"{player.Username}.ckey");
+        _ = keyTransaction.KeyDeleteAsync($"{player.Username}.lkey");
+        _ = keyTransaction.KeyDeleteAsync($"{player.Username}.ckey");
+        bool keyTransactionSuccess = await keyTransaction.ExecuteAsync();
+        if (!keyTransactionSuccess)
+        {
+            _logger.LogWarning("Client {RemoteEndPoint} failed to login: Key Transaction Failed!", stream.Socket.RemoteEndPoint);
+            return new DisconnectResponse(XTMessage.UnknownError);
+        }
+
+        #endregion
+
+        var loginHash = Crypto.EncryptPassword(loginKeyTask.Result.ToString() + _options.RandomKey) + loginKeyTask.Result.ToString();
+        if (loginHash != clientKey)
+        {
+            _logger.LogWarning("Client {RemoteEndPoint} failed to login: login hash ({loginHash}) does not match client key ({clientKey})", stream.Socket.RemoteEndPoint, loginHash, clientKey);
+            return new DisconnectResponse(XTMessage.UnknownError);
+        }
+
+        if (loginKeyTask.Result.ToString() != loginKey)
+        {
+            _logger.LogWarning("Client {RemoteEndPoint} failed to login: stored login key ({loginKeyTask}) does not match passed login key ({loginKey})", stream.Socket.RemoteEndPoint, loginKeyTask.Result.ToString(), loginKey);
+            return new DisconnectResponse(XTMessage.UnknownError);
+        }
+
+        if (confirmHashTask.Result.ToString() != confirmationHash)
+        {
+            _logger.LogWarning("Client {RemoteEndPoint} failed to login: stored confirmation hash ({confirmHashTask}) does not match passed confirmation hash ({confirmationHash})", stream.Socket.RemoteEndPoint, confirmHashTask.Result.ToString(), confirmationHash);
+            return new DisconnectResponse(XTMessage.UnknownError);
+        }
+
+        bool setLoginKeySuccess = await redis.StringSetAsync($"{player.Username}.loginkey", loginKey, TimeSpan.FromHours(12));
+        if (!setLoginKeySuccess)
+        {
+            _logger.LogError("Failed to set login key!");
+            return new DisconnectResponse(XTMessage.UnknownError);
+        }
+
+        // TODO: Check if server is above capacity and disconnect with 103 error
+
+        // TODO: Check if Banned and disconnect
+
+        // TODO: Check if already connected and disconnect
+
+        _logger.LogInformation("{username} logged in successfully from {RemoteEndPoint}", player.Username, stream.Socket.RemoteEndPoint);
+
+        return new RegularResponse(XTMessage.CreateMessage("l"));
     }
 }

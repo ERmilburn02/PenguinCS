@@ -4,12 +4,12 @@ public static class XTMessage
 {
     public static string UnknownError => CreateError(0);
 
-    public static string CreateMessage(string group, params string[] args)
+    public static string CreateMessage(string id, params string[] args)
     {
         var argString = string.Join('%', args);
         string internalId = (-1).ToString();
 
-        string message = string.Format("%xt%{0}%{1}%{2}%", group, internalId, argString);
+        string message = string.Format("%xt%{0}%{1}%{2}%", id, internalId, argString);
 
         return message;
     }
