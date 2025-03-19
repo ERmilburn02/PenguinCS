@@ -8,6 +8,7 @@ using System.Xml;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PenguinCS.Common;
+using PenguinCS.Common.Attributes;
 using PenguinCS.Common.Extensions;
 using PenguinCS.Common.Interfaces;
 using PenguinCS.Common.Responses;
@@ -16,6 +17,7 @@ using StackExchange.Redis;
 
 namespace PenguinCS.Login.Handlers;
 
+[XMLMessageHandler("login")]
 internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext dbContext, IConnectionMultiplexer connectionMultiplexer, IOptions<PenguinCSOptions> options) : IMessageHandler
 {
     private readonly ILogger<LoginHandler> _logger = logger;

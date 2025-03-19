@@ -4,11 +4,13 @@ using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using PenguinCS.Common.Attributes;
 using PenguinCS.Common.Interfaces;
 using PenguinCS.Common.Responses;
 
 namespace PenguinCS.Common.Handlers;
 
+[XMLMessageHandler("verChk")]
 public class VersionCheckHandler(ILogger<VersionCheckHandler> logger, IOptions<PenguinCSOptions> options) : IMessageHandler
 {
     private readonly ILogger<VersionCheckHandler> _logger = logger;

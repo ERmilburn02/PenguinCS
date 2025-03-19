@@ -1,4 +1,4 @@
-namespace PenguinCS.Common;
+namespace PenguinCS.Common.Enums;
 
 public enum EMessageFormat
 {

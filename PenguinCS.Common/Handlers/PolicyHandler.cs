@@ -2,11 +2,13 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using PenguinCS.Common.Attributes;
 using PenguinCS.Common.Interfaces;
 using PenguinCS.Common.Responses;
 
 namespace PenguinCS.Common.Handlers;
 
+[XMLMessageHandler("policy-file-request")]
 public class PolicyHandler(ILogger<PolicyHandler> logger) : IMessageHandler
 {
     private readonly ILogger<PolicyHandler> _logger = logger;

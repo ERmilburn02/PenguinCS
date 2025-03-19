@@ -1,14 +1,15 @@
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using PenguinCS.Common.Attributes;
 using PenguinCS.Common.Interfaces;
 using PenguinCS.Common.Responses;
 
 namespace PenguinCS.Common.Handlers;
 
+[XMLMessageHandler("rndK")]
 public class RandomKeyHandler(ILogger<RandomKeyHandler> logger, IOptions<PenguinCSOptions> options) : IMessageHandler
 {
     private readonly ILogger<RandomKeyHandler> _logger = logger;

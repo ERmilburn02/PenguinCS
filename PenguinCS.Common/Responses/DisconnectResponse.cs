@@ -13,5 +13,7 @@ public class DisconnectResponse(string message) : IResponse
     public async Task SendResponseAsync(NetworkStream stream, CancellationToken cancellationToken)
     {
         await stream.WriteUTF8NullTerminatedStringAsync(Message, cancellationToken);
+
+        stream.Close(); // Close Stream after sending response
     }
 }

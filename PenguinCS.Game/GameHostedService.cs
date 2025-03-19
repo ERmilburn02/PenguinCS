@@ -7,19 +7,17 @@ using System.Xml;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PenguinCS.Common;
+using PenguinCS.Common.Enums;
 using PenguinCS.Common.Extensions;
-using PenguinCS.Common.Responses;
-using PenguinCS.Data;
 using StackExchange.Redis;
 
 namespace PenguinCS.Game;
 
-internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionMultiplexer redis, ApplicationDbContext dbContext, MessageHandlerFactory messageHandlerFactory) : IHostedService
+internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionMultiplexer redis, MessageProcessor processor) : IHostedService
 {
     private readonly ILogger<GameHostedService> _logger = logger;
     private readonly IConnectionMultiplexer _redis = redis;
-    private readonly ApplicationDbContext _dbContext = dbContext;
-    private readonly MessageHandlerFactory _messageHandlerFactory = messageHandlerFactory;
+    private readonly MessageProcessor _processor = processor;
     private TcpListener _listener;
     private CancellationTokenSource _cancellationTokenSource;
 
@@ -86,16 +84,18 @@ internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionM
 
                 _logger.LogTrace("Received from {RemoteEndPoint}: {message}", client.Client.RemoteEndPoint, messageContent);
 
-                var (messageFormat, messageType) = GetMessageInfo(messageContent);
-                var handler = _messageHandlerFactory.GetHandler(messageFormat, messageType);
-                var response = await handler.HandleMessageAsync(messageContent, stream, cancellationToken);
+                var (messageFormat, idOrAction, extension) = GetMessageInfo(messageContent);
 
-                await response.SendResponseAsync(stream, cancellationToken);
-
-                if (response is DisconnectResponse)
+                switch (messageFormat)
                 {
-                    _logger.LogInformation("Disconnecting client as per request.");
-                    break;
+                    case EMessageFormat.XML:
+                        await _processor.ProcessXMLMessageAsync(messageContent, idOrAction, stream, cancellationToken);
+                        break;
+                    case EMessageFormat.XT:
+                        await _processor.ProcessXTMessageAsync(messageContent, idOrAction, extension, stream, cancellationToken);
+                        break;
+                    default:
+                        throw new InvalidOperationException("Unknown message type");
                 }
             }
         }
@@ -110,11 +110,11 @@ internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionM
         }
     }
 
-    private (EMessageFormat, string) GetMessageInfo(string messageContent)
+    private (EMessageFormat format, string idOrAction, string extension) GetMessageInfo(string messageContent)
     {
         if (messageContent.StartsWith("<policy-file-request/>"))
         {
-            return (EMessageFormat.XML, "policy-file-request");
+            return (EMessageFormat.XML, "policy-file-request", string.Empty);
         }
         else if (messageContent.StartsWith('<'))
         {
@@ -126,14 +126,14 @@ internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionM
             XmlNode bodyNode = rootElement.SelectSingleNode("body");
             string actionAttribute = ((XmlElement)bodyNode).GetAttribute("action");
 
-            return (EMessageFormat.XML, actionAttribute);
+            return (EMessageFormat.XML, actionAttribute, string.Empty);
         }
         else if (messageContent.StartsWith("%xt%"))
         {
             // XT Packet, get ext and id
             // TODO
             _logger.LogError("UNHANDLED XT PACKET: {messageContent}", messageContent);
-            return (EMessageFormat.XT, "ERROR");
+            return (EMessageFormat.XT, "ERROR", "ERROR");
         }
         else
         {
