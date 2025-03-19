@@ -1,14 +1,13 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PenguinCS.Common;
-using PenguinCS.Common.Handlers;
 using PenguinCS.Data;
-using PenguinCS.Login.Handlers;
 using Serilog;
 using StackExchange.Redis;
 
@@ -53,14 +52,16 @@ public static class Program
                     });
 
                     // Handlers
-                    services.AddTransient<PolicyHandler>();
-                    services.AddTransient<VersionCheckHandler>();
-                    services.AddTransient<RandomKeyHandler>();
+                    var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.FullName.StartsWith("PenguinCS"));
+                    var handlerTypes = MessageHandlerRegistry.GetHandlerList(assemblies);
+                    foreach (var handlerType in handlerTypes)
+                    {
+                        services.AddTransient(handlerType);
+                    }
 
-                    services.AddTransient<LoginHandler>();
-
-                    // Factory
-                    services.AddSingleton<MessageHandlerFactory>();
+                    // Registry
+                    services.AddSingleton<MessageHandlerRegistry>();
+                    services.AddSingleton<MessageProcessor>();
 
                     // Server
                     services.AddHostedService<LoginHostedService>();
