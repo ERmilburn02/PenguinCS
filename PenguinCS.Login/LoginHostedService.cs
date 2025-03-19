@@ -132,9 +132,13 @@ internal class LoginHostedService(ILogger<LoginHostedService> logger, IConnectio
         else if (messageContent.StartsWith("%xt%"))
         {
             // XT Packet, get ext and id
-            // TODO
-            _logger.LogError("UNHANDLED XT PACKET: {messageContent}", messageContent);
-            return (EMessageFormat.XT, "ERROR", "ERROR");
+            var parts = messageContent.Split('%');
+            // 1: blank. 2: xt. 3: s. 4: id#ext
+            var data = parts[3].Split('#');
+            var id = data[0];
+            var extension = data[1];
+
+            return (EMessageFormat.XT, id, extension);
         }
         else
         {
