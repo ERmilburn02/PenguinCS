@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PenguinCS.Common;
 using PenguinCS.Common.Handlers;
 using PenguinCS.Common.Interfaces;
+using PenguinCS.Game.Handlers.XML;
 
 namespace PenguinCS.Game;
 
@@ -29,6 +30,8 @@ internal class MessageHandlerFactory(IServiceProvider serviceProvider)
 
             "rndK" => _serviceProvider.GetRequiredService<RandomKeyHandler>(),
             "verChk" => _serviceProvider.GetRequiredService<VersionCheckHandler>(),
+
+            "login" => _serviceProvider.GetRequiredService<LoginHandler>(),
 
             _ => throw new ArgumentException("Invalid message type", type)
         };

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using PenguinCS.Common;
 using PenguinCS.Common.Handlers;
 using PenguinCS.Data;
+using PenguinCS.Game.Handlers.XML;
 using Serilog;
 using StackExchange.Redis;
 
@@ -55,6 +56,8 @@ public static class Program
                     services.AddTransient<PolicyHandler>();
                     services.AddTransient<VersionCheckHandler>();
                     services.AddTransient<RandomKeyHandler>();
+
+                    services.AddTransient<LoginHandler>();
 
                     // Factory
                     services.AddSingleton<MessageHandlerFactory>();
