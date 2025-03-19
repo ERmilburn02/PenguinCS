@@ -17,7 +17,7 @@ internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionM
 {
     private readonly ILogger<GameHostedService> _logger = logger;
     private readonly IConnectionMultiplexer _redis = redis;
-    private MessageProcessor _processor = processor;
+    private readonly MessageProcessor _processor = processor;
     private TcpListener _listener;
     private CancellationTokenSource _cancellationTokenSource;
 
