@@ -7,6 +7,7 @@ using System.Xml;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PenguinCS.Common;
+using PenguinCS.Common.Enums;
 using PenguinCS.Common.Extensions;
 using PenguinCS.Common.Responses;
 using PenguinCS.Data;

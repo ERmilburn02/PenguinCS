@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using PenguinCS.Common;
+using PenguinCS.Common.Enums;
 using PenguinCS.Common.Handlers;
 using PenguinCS.Common.Interfaces;
 using PenguinCS.Login.Handlers;
