@@ -13,11 +13,12 @@ using StackExchange.Redis;
 
 namespace PenguinCS.Game;
 
-internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionMultiplexer redis, MessageProcessor processor) : IHostedService
+internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionMultiplexer redis, MessageProcessor processor, PlayerMappingService playerMappingService) : IHostedService
 {
     private readonly ILogger<GameHostedService> _logger = logger;
     private readonly IConnectionMultiplexer _redis = redis;
     private readonly MessageProcessor _processor = processor;
+    private readonly PlayerMappingService _playerMappingService = playerMappingService;
     private TcpListener _listener;
     private CancellationTokenSource _cancellationTokenSource;
 
@@ -105,7 +106,10 @@ internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionM
         }
         finally
         {
+            _playerMappingService.RemovePlayer(client.Client);
+            
             client.Close();
+
             _logger.LogInformation("Client disconnected.");
         }
     }

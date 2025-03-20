@@ -16,12 +16,13 @@ using StackExchange.Redis;
 namespace PenguinCS.Game.Handlers.XML;
 
 [XMLMessageHandler("login")]
-internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext dbContext, IConnectionMultiplexer connectionMultiplexer, IOptions<PenguinCSOptions> options) : IMessageHandler
+internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext dbContext, IConnectionMultiplexer connectionMultiplexer, IOptions<PenguinCSOptions> options, PlayerMappingService playerMappingService) : IMessageHandler
 {
     private readonly ILogger<LoginHandler> _logger = logger;
     private readonly ApplicationDbContext _dbContext = dbContext;
     private readonly IConnectionMultiplexer _connectionMultiplexer = connectionMultiplexer;
     private readonly PenguinCSOptions _options = options.Value;
+    private readonly PlayerMappingService _playerMappingService = playerMappingService;
     
     // EXAMPLE
     // <msg t='sys'><body action='login' r='0'><login z='w1'><nick><![CDATA[101|101|basil|d41d8cd98f00b204e9800998ecf8427e|houdini|1|0]]></nick><pword><![CDATA[0c3b05a01028d3489d6440c1dab40e24d41d8cd98f00b204e9800998ecf8427e#95c2daac1c6583ad25d62db61c192f84]]></pword></login></body></msg>
@@ -128,7 +129,16 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
 
         // TODO: Check if Banned and disconnect
 
-        // TODO: Check if already connected and disconnect
+        var existingPlayer = _playerMappingService.GetPlayer(userId);
+        if (existingPlayer != null)
+        {
+            _logger.LogWarning("{username} ({PID}) was already listed in the Player Mapping Service, disconnecting and removing them", player.Username, player.Id);
+            existingPlayer.Disconnect();
+            _playerMappingService.RemovePlayer(existingPlayer.Socket);
+        }
+
+        Player playerObj = new(userId, stream);
+        _playerMappingService.AddPlayer(playerObj);
 
         _logger.LogInformation("{username} logged in successfully from {RemoteEndPoint}", player.Username, stream.Socket.RemoteEndPoint);
 

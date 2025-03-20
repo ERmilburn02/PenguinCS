@@ -51,6 +51,9 @@ public static class Program
                         options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
                     });
 
+                    // Player Map
+                    services.AddSingleton<PlayerMappingService>();
+
                     // Handlers
                     var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.FullName.StartsWith("PenguinCS"));
                     var handlerTypes = MessageHandlerRegistry.GetHandlerList(assemblies);
