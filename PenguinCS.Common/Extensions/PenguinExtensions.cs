@@ -35,4 +35,9 @@ public static class PenguinExtensions
 
         return Convert.ToInt32(sb.ToString(), 2);
     }
+
+    public static int GetAgeInDays(this Penguin player)
+    {
+        return (DateTime.UtcNow - player.RegistrationDate).Days;
+    }
 }

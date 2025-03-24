@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 
@@ -39,6 +40,11 @@ internal class PlayerMappingService(ILogger<PlayerMappingService> logger)
         }
 
         return null;
+    }
+
+    public List<Player> GetAllPlayers()
+    {
+        return [.. Players.Values];
     }
 
     public Player GetPlayer(Socket socket)

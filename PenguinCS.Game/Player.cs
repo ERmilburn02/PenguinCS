@@ -9,6 +9,7 @@ namespace PenguinCS.Game;
 internal class Player(int pid, NetworkStream stream)
 {
     public int PID { get; } = pid;
+    public string Username => CachedPenguin.Username;
     public Socket Socket => Stream.Socket;
     public NetworkStream Stream { get; } = stream;
     public Penguin CachedPenguin { get; private set; }
@@ -16,9 +17,16 @@ internal class Player(int pid, NetworkStream stream)
     public bool IsConnected => Socket.Connected;
     public void Disconnect() => Stream.Close();
 
+    public bool HasJoined { get; private set; }
+
     public void SetCachedPenguin(Penguin penguin)
     {
         CachedPenguin = penguin;
+    }
+
+    public void SetHasJoined(bool hasJoined)
+    {
+        HasJoined = hasJoined;
     }
 
     public void SendMessage(string message)
