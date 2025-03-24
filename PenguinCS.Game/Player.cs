@@ -1,4 +1,3 @@
-using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +16,7 @@ internal class Player(int pid, NetworkStream stream)
     public bool IsConnected => Socket.Connected;
     public void Disconnect() => Stream.Close();
 
-    public void SetPenguin(Penguin penguin)
+    public void SetCachedPenguin(Penguin penguin)
     {
         CachedPenguin = penguin;
     }

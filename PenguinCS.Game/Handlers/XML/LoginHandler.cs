@@ -138,6 +138,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
         }
 
         Player playerObj = new(userId, stream);
+        playerObj.SetCachedPenguin(player);
         _playerMappingService.AddPlayer(playerObj);
 
         _logger.LogInformation("{username} logged in successfully from {RemoteEndPoint}", player.Username, stream.Socket.RemoteEndPoint);
