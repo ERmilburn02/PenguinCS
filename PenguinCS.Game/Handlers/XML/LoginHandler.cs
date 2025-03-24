@@ -143,6 +143,9 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
 
         _logger.LogInformation("{username} logged in successfully from {RemoteEndPoint}", player.Username, stream.Socket.RemoteEndPoint);
 
+        // TODO: Here we should start an async task to send their puffles
+        // see houdini/handlers/play/pet.py@load_pet_inventory (:239)
+
         return new RegularResponse(XTMessage.CreateMessage("l"));
     }
 }
