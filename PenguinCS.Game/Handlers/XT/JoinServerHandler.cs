@@ -62,7 +62,7 @@ internal class JoinServerHandler(ILogger<JoinServerHandler> logger, PlayerMappin
 
         var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var penguinStandardTime = currentTime * 1000;
-        var serverTimeZone = "GMT"; // TODO: Replace with config
+        var serverTimeZone = "America/Vancouver"; // TODO: Replace with config
         var tz = TimeZoneInfo.FindSystemTimeZoneById(serverTimeZone);
         DateTimeOffset dt = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(currentTime), tz);
         var serverTimeOffset = Math.Abs(dt.Offset.Hours);
