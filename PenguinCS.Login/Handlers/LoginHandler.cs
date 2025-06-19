@@ -154,7 +154,7 @@ internal class LoginHandler(ILogger<LoginHandler> logger, ApplicationDbContext d
 
         _logger.LogInformation("Client {remoteEndPoint} logged in", stream.Socket.RemoteEndPoint);
 
-        var randomKey = Crypto.GenerateRandomKey();
+        var randomKey = Crypto.GenerateRandomKey(8);
         var loginKey = Crypto.Hash(randomKey);
         var confirmationHash = Crypto.Hash(Crypto.GenerateRandomKey(24));
 
