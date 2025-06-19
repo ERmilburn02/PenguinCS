@@ -20,7 +20,7 @@ internal class LoginHostedService(
 ) : TcpService(logger, redis, processor)
 {
     protected override string Name => "Login Server";
-    protected override int Port => 6112;
+    protected override int Port => 9912;
     
     public override async Task AcceptClientAsync(CancellationToken cancellationToken)
     {
