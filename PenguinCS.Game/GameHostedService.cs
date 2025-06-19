@@ -13,49 +13,25 @@ using StackExchange.Redis;
 
 namespace PenguinCS.Game;
 
-internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionMultiplexer redis, MessageProcessor processor, PlayerMappingService playerMappingService) : IHostedService
+internal class GameHostedService(
+    ILogger<GameHostedService> logger, 
+    IConnectionMultiplexer redis, 
+    MessageProcessor processor, 
+    PlayerMappingService playerMappingService
+) : TcpService(logger, redis, processor)
 {
-    private readonly ILogger<GameHostedService> _logger = logger;
-    private readonly IConnectionMultiplexer _redis = redis;
-    private readonly MessageProcessor _processor = processor;
-    private readonly PlayerMappingService _playerMappingService = playerMappingService;
-    private TcpListener _listener;
-    private CancellationTokenSource _cancellationTokenSource;
-
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        var port = 9913;
-
-        _listener = new TcpListener(IPAddress.Any, port);
-        _listener.Start();
-        _logger.LogInformation("Game Server started on port {port}", port);
-
-        _ = AcceptClientAsync(_cancellationTokenSource.Token);
-
-        return Task.CompletedTask;
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Stopping Game Server...");
-
-        _cancellationTokenSource.Cancel();
-        _listener.Stop();
-
-        await Task.Delay(500, CancellationToken.None); // Give a brief moment to complete ongoing tasks
-
-        _logger.LogInformation("Game Server stopped.");
-    }
-
-    private async Task AcceptClientAsync(CancellationToken cancellationToken)
+    protected readonly PlayerMappingService PlayerMapping = playerMappingService;
+    
+    protected override string Name => "Game Server";
+    protected override int Port => 9913;
+    
+    public override async Task AcceptClientAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                var client = await _listener.AcceptTcpClientAsync(cancellationToken);
+                var client = await Listener.AcceptTcpClientAsync(cancellationToken);
                 _ = HandleClientAsync(client, cancellationToken);
             }
             catch (Exception ex) when (ex is ObjectDisposedException || ex is InvalidOperationException)
@@ -64,36 +40,34 @@ internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionM
             }
         }
     }
-
-    private async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
+    
+    public override async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Client {RemoteEndPoint} connected.", client.Client.RemoteEndPoint);
+        Logger.LogInformation("Client {RemoteEndPoint} connected.", client.Client.RemoteEndPoint);
         var stream = client.GetStream();
-
+        
         try
         {
-            var redis = _redis.GetDatabase();
-
             while (client.Connected && !cancellationToken.IsCancellationRequested)
             {
-                string messageContent = stream.ReadUTF8NullTerminatedString();
-
+                string messageContent = await stream.ReadUTF8NullTerminatedStringAsync(cancellationToken);
+                
                 if (string.IsNullOrWhiteSpace(messageContent))
                 {
                     break;
                 }
-
-                _logger.LogTrace("Received from {RemoteEndPoint}: {message}", client.Client.RemoteEndPoint, messageContent);
-
-                var (messageFormat, idOrAction, extension) = GetMessageInfo(messageContent);
-
+                
+                Logger.LogTrace("Received from {RemoteEndPoint}: {message}", client.Client.RemoteEndPoint, messageContent);
+                
+                var (messageFormat, idOrAction, extension) = ResolveMessageInfo(messageContent);
+                
                 switch (messageFormat)
                 {
                     case EMessageFormat.XML:
-                        await _processor.ProcessXMLMessageAsync(messageContent, idOrAction, stream, cancellationToken);
+                        await Processor.ProcessXMLMessageAsync(messageContent, idOrAction, stream, cancellationToken);
                         break;
                     case EMessageFormat.XT:
-                        await _processor.ProcessXTMessageAsync(messageContent, idOrAction, extension, stream, cancellationToken);
+                        await Processor.ProcessXTMessageAsync(messageContent, idOrAction, extension, stream, cancellationToken);
                         break;
                     default:
                         throw new InvalidOperationException("Unknown message type");
@@ -102,50 +76,13 @@ internal class GameHostedService(ILogger<GameHostedService> logger, IConnectionM
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling client.");
+            logger.LogError(ex, "Error handling client.");
         }
         finally
         {
-            _playerMappingService.RemovePlayer(client.Client);
-            
+            PlayerMapping.RemovePlayer(client.Client);
             client.Close();
-
-            _logger.LogInformation("Client disconnected.");
-        }
-    }
-
-    private (EMessageFormat format, string idOrAction, string extension) GetMessageInfo(string messageContent)
-    {
-        if (messageContent.StartsWith("<policy-file-request/>"))
-        {
-            return (EMessageFormat.XML, "policy-file-request", string.Empty);
-        }
-        else if (messageContent.StartsWith('<'))
-        {
-            // XML Packet, check the action attribute on the body
-            XmlDocument xmlDoc = new();
-            xmlDoc.LoadXml(messageContent);
-
-            XmlElement rootElement = xmlDoc.DocumentElement;
-            XmlNode bodyNode = rootElement.SelectSingleNode("body");
-            string actionAttribute = ((XmlElement)bodyNode).GetAttribute("action");
-
-            return (EMessageFormat.XML, actionAttribute, string.Empty);
-        }
-        else if (messageContent.StartsWith("%xt%"))
-        {
-            // XT Packet, get ext and id
-            var parts = messageContent.Split('%');
-            // 1: blank. 2: xt. 3: s. 4: id#ext
-            var data = parts[3].Split('#');
-            var id = data[0];
-            var extension = data[1];
-
-            return (EMessageFormat.XT, id, extension);
-        }
-        else
-        {
-            throw new InvalidOperationException("Unknown message type");
+            logger.LogInformation("Client disconnected.");
         }
     }
 }
