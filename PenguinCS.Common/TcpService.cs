@@ -86,10 +86,9 @@ public class TcpService(
         }
         
         // XT Packets
+        // Example: %xt%s%j#js%-1%101%d41d8cd98f00b204e9800998ecf8427e%en%
         if (messageContent.StartsWith("%xt%"))
         {
-            // Example: %xt%s%j#js%-1%101%d41d8cd98f00b204e9800998ecf8427e%en%
-            
             // Message Parts:
             // 1: Blank
             // 2: xt
