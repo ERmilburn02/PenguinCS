@@ -54,10 +54,6 @@ public class TcpService(
 
         await cancellationTokenSource.CancelAsync();
         Listener.Stop();
-
-        // Give a brief moment to complete ongoing tasks
-        await Task.Delay(500, CancellationToken.None);
-
         Logger.LogInformation("{name} stopped.", Name);
     }
 
