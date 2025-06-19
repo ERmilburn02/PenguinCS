@@ -40,7 +40,7 @@ internal class LoginHostedService(
 
     public override async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Client {RemoteEndPoint} connected.", client.Client.RemoteEndPoint);
+        Logger.LogInformation("Client {RemoteEndPoint} connected.", client.Client.RemoteEndPoint);
         var stream = client.GetStream();
         
         try
@@ -54,7 +54,7 @@ internal class LoginHostedService(
                     break;
                 }
 
-                logger.LogTrace("Received from {RemoteEndPoint}: {message}", client.Client.RemoteEndPoint, messageContent);
+                Logger.LogTrace("Received from {RemoteEndPoint}: {message}", client.Client.RemoteEndPoint, messageContent);
 
                 var (messageFormat, idOrAction, extension) = ResolveMessageInfo(messageContent);
 
@@ -73,12 +73,12 @@ internal class LoginHostedService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error handling client.");
+            Logger.LogError(ex, "Error handling client.");
         }
         finally
         {
             client.Close();
-            logger.LogInformation("Client disconnected.");
+            Logger.LogInformation("Client disconnected.");
         }
     }
 }
