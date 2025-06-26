@@ -23,6 +23,12 @@ internal class GetDigCooldownHandler(ILogger<GetDigCooldownHandler> logger, ICon
     {
         var player = _playerMappingService.GetPlayer(stream.Socket);
 
+        if (player == null)
+        {
+            _logger.LogError("Player {SocketRemoteEndPoint} not found", stream.Socket.RemoteEndPoint);
+            return new DisconnectResponse(XTMessage.UnknownError);
+        }
+
         try
         {
             var redis = _connectionMultiplexer.GetDatabase();
