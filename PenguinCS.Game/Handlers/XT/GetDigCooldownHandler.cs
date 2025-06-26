@@ -42,7 +42,14 @@ internal class GetDigCooldownHandler(ILogger<GetDigCooldownHandler> logger, ICon
                 return new RegularResponse(XTMessage.CreateMessage("getdigcooldown", 0.ToString()));
             }
 
-            var lastDig = int.Parse(await redis.StringGetAsync(digCooldownKey));
+            var redisValue = await redis.StringGetAsync(digCooldownKey);
+            if (!int.TryParse(redisValue, out var lastDig))
+            {
+                _logger.LogError("Player {PID} has a non-int value for last_dig in redis! Value: {redisValue}", player.PID, redisValue);
+                
+                return new DisconnectResponse(XTMessage.UnknownError);
+            }
+            
             var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             var cooldownRemaining = Math.Max(0, 120 - (currentTime - lastDig));
