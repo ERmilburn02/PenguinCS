@@ -3,6 +3,11 @@ namespace PenguinCS.Common;
 public static class XTMessage
 {
     public static string UnknownError => CreateError(0);
+    
+    /// <summary>
+    /// Listed as "No db connection" on the Wiki, shows as generic "There was an error" in-game
+    /// </summary>
+    public static string DatabaseError => CreateError(1000);
 
     public static string CreateMessage(string id, params string[] args)
     {

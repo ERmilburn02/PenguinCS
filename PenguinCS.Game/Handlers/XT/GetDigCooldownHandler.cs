@@ -21,24 +21,43 @@ internal class GetDigCooldownHandler(ILogger<GetDigCooldownHandler> logger, ICon
     
     public async Task<IResponse> HandleMessageAsync(string messageContent, NetworkStream stream, CancellationToken cancellationToken)
     {
-        var redis = _connectionMultiplexer.GetDatabase();
-        
         var player = _playerMappingService.GetPlayer(stream.Socket);
 
-        var digCooldownKey = string.Format("houdini.last_dig.{0}", player.PID);
-
-        if (!await redis.KeyExistsAsync(digCooldownKey))
+        try
         {
-            _logger.LogTrace("Player {PID} has no dig cooldown",  player.PID);
-            return new RegularResponse(XTMessage.CreateMessage("getdigcooldown", 0.ToString()));
-        }
+            var redis = _connectionMultiplexer.GetDatabase();
 
-        var lastDig = int.Parse(await redis.StringGetAsync(digCooldownKey));
-        var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        
-        var cooldownRemaining = Math.Max(0, 120 - (currentTime - lastDig));
-        _logger.LogTrace("Player {PID} has {cooldownRemaining} seconds dig cooldown remaining", player.PID, cooldownRemaining);
-        
-        return new RegularResponse(XTMessage.CreateMessage("getdigcooldown", cooldownRemaining.ToString()));
+            var digCooldownKey = $"houdini.last_dig.{player.PID}";
+
+
+            if (!await redis.KeyExistsAsync(digCooldownKey))
+            {
+                _logger.LogTrace("Player {PID} has no dig cooldown", player.PID);
+                return new RegularResponse(XTMessage.CreateMessage("getdigcooldown", 0.ToString()));
+            }
+
+            var lastDig = int.Parse(await redis.StringGetAsync(digCooldownKey));
+            var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            var cooldownRemaining = Math.Max(0, 120 - (currentTime - lastDig));
+            _logger.LogTrace("Player {PID} has {cooldownRemaining} seconds dig cooldown remaining", player.PID,
+                cooldownRemaining);
+
+            return new RegularResponse(XTMessage.CreateMessage("getdigcooldown", cooldownRemaining.ToString()));
+        }
+        catch (RedisException ex)
+        {
+            _logger.LogCritical(ex, "Redis exception in GetDigCooldown");
+
+            await player.SendMessageAsync(XTMessage.DatabaseError, cancellationToken);
+
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error in GetDigCooldown");
+
+            return new DisconnectResponse(XTMessage.UnknownError);
+        }
     }
 }
